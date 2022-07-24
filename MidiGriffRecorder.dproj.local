@@ -1,0 +1,30 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<BorlandProject>
+	<Transactions>
+    <Transaction>2022/04/25 06:41:42.000.571,=C:\Users\juerg\Documents\Embarcadero\Studio\Projects\Unit3.pas</Transaction>
+    <Transaction>2022/07/23 10:08:29.000.120,=C:\Users\juerg\Documents\Embarcadero\Studio\Projects\Unit3.pas</Transaction>
+    <Transaction>2022/07/23 10:09:58.000.620,Z:\MidiGriffRecorder\UMidiGriffRecorder.dfm=C:\Users\juerg\Documents\Embarcadero\Studio\Projects\Unit3.dfm</Transaction>
+    <Transaction>2022/07/23 10:09:58.000.620,Z:\MidiGriffRecorder\UMidiGriffRecorder.pas=C:\Users\juerg\Documents\Embarcadero\Studio\Projects\Unit3.pas</Transaction>
+    <Transaction>2022/07/23 10:10:08.000.604,Z:\MidiGriffRecorder\MidiGriffRecorder.dproj=C:\Users\juerg\Documents\Embarcadero\Studio\Projects\Project3.dproj</Transaction>
+    <Transaction>2022/07/23 10:37:36.000.143,=Z:\MidiGriffRecorder\Midi.pas</Transaction>
+    <Transaction>2022/07/23 10:37:45.000.643,=Z:\MidiGriffRecorder\teVirtual\teVirtualMIDIdll.pas</Transaction>
+    <Transaction>2022/07/23 10:52:32.000.260,=Z:\MidiGriffRecorder\UMidiSaveStream.pas</Transaction>
+    <Transaction>2022/07/23 10:52:32.000.323,=Z:\MidiGriffRecorder\UMyMidiStream.pas</Transaction>
+    <Transaction>2022/07/23 10:52:32.000.198,=Z:\MidiGriffRecorder\UMidiEvent.pas</Transaction>
+    <Transaction>2022/07/23 10:52:32.000.292,=Z:\MidiGriffRecorder\UMyMemoryStream.pas</Transaction>
+    <Transaction>2022/07/23 10:57:42.000.235,Z:\MidiGriffRecorder\UMidiSaveStream.pas=</Transaction>
+    <Transaction>2022/07/23 10:57:45.000.672,Z:\MidiGriffRecorder\UMyMemoryStream.pas=</Transaction>
+    <Transaction>2022/07/23 10:57:49.000.116,Z:\MidiGriffRecorder\UMyMidiStream.pas=</Transaction>
+    <Transaction>2022/07/23 12:59:32.000.376,=Z:\MidiGriffRecorder\UVirtual.pas</Transaction>
+    <Transaction>2022/07/24 06:24:27.000.491,=Z:\Projekte\MidiGriffRecorder\UMidiEvent.pas</Transaction>
+    <Transaction>2022/07/24 06:24:27.000.553,=Z:\Projekte\MidiGriffRecorder\UMyMidiStream.pas</Transaction>
+    <Transaction>2022/07/24 06:24:27.000.522,=Z:\Projekte\MidiGriffRecorder\UMidiSaveStream.pas</Transaction>
+    <Transaction>2022/07/24 06:24:57.000.538,=Z:\Projekte\MidiGriffRecorder\UMyMemoryStream.pas</Transaction>
+    <Transaction>2022/07/24 06:26:51.000.213,Z:\Projekte\MidiGriffRecorder\UMyMemoryStream.pas=</Transaction>
+    <Transaction>2022/07/24 06:26:56.000.328,Z:\Projekte\MidiGriffRecorder\UMyMidiStream.pas=</Transaction>
+    <Transaction>2022/07/24 06:27:05.000.998,Z:\Projekte\MidiGriffRecorder\UMidiEvent.pas=</Transaction>
+    <Transaction>2022/07/24 06:34:38.000.330,=Z:\Projekte\MidiGriffRecorder\UMyMidiStream.pas</Transaction>
+    <Transaction>2022/07/24 06:34:38.000.252,=Z:\Projekte\MidiGriffRecorder\UMidiEvent.pas</Transaction>
+    <Transaction>2022/07/24 06:34:38.000.315,=Z:\Projekte\MidiGriffRecorder\UMyMemoryStream.pas</Transaction>
+  </Transactions>
+</BorlandProject>
