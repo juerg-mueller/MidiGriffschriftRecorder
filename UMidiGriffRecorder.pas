@@ -4,7 +4,7 @@ interface
 
 uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
-  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, Vcl.CheckLst, UMidiEvent;
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, Vcl.CheckLst, UMidiEvent, syncobjs;
 
 type
   TMidiGriff = class(TForm)
@@ -17,11 +17,15 @@ type
     procedure FormCreate(Sender: TObject);
     procedure btnStartClick(Sender: TObject);
     procedure FormShow(Sender: TObject);
+    procedure FormDestroy(Sender: TObject);
+    procedure FormCloseQuery(Sender: TObject; var CanClose: Boolean);
   private
     OutputDevIndex: integer;
     OldTime: TTime;
+    Ons: array [1..6, 0..127] of boolean;
+    CriticalMidiIn: syncobjs.TCriticalSection;
     procedure RegenerateMidi;
-    procedure SaveMidi;  
+    procedure SaveMidi;
   public
     Header: TDetailHeader; 
 
@@ -39,14 +43,13 @@ uses
   Midi, UMidiSaveStream;
 
 var
-  eventCount: cardinal;
+  eventCount: integer;
   hasOns: boolean;
   MidiEvents: array of TMidiEvent;
 
 procedure TMidiGriff.SaveMidi;
 var
   i, newCount: integer;
-  Event: TMidiEvent;
   SaveStream: TMidiSaveStream;
   name: string;
   inpush: boolean;
@@ -89,26 +92,20 @@ begin
     SaveStream.AppendHeaderMetaEvents(Header);
     SaveStream.AppendTrackEnd(false);
     SaveStream.AppendTrackHead(0);
-    for i := 0 to 6 do
-    begin 
-       SaveStream.WriteByte($C0 + i);
-       SaveStream.WriteByte(21);
-       SaveStream.WriteByte(0);
-    end;
     for i := 0 to newCount-1 do
       SaveStream.AppendEvent(MidiEvents[i]);
     SaveStream.AppendTrackEnd(true);
     name := 'griff_recorder';
     if FileExists(name+'.mid') then
-    begin  
+    begin
       name := name + '_';
       i := 1;
-      while FileExists(name + IntToStr(i) + '.mid') do
+      while FileExists(name + IntToStr(i) + '.mid', false) do
         inc(i);
       
-      name := name + IntToStr(i) + '.mid';
+      name := name + IntToStr(i);
     end;
-    SaveStream.SaveToFile(name);      
+    SaveStream.SaveToFile(name+'.mid');
     Application.MessageBox(PWideChar(name + ' saved'), '');
     
   finally
@@ -118,13 +115,20 @@ end;
 
 procedure TMidiGriff.btnStartClick(Sender: TObject);
 var
-  i: integer;
+  i, j: integer;
 begin
   if btnStart.Caption = 'Stop Recording' then
   begin
     btnStart.Caption := 'Start Recording';
     MidiInput.OnMidiData := nil;
     MidiInput.CloseAll;
+    if OutputDevIndex > 0 then
+    begin
+      for j := 1 to 6 do
+        for i := 0 to 127 do
+          if Ons[j, i] then
+            MidiOutput.Send(OutputDevIndex-1, $80 + j, i, $40);
+    end;
     MidiOutput.CloseAll;    
     if hasOns then
       SaveMidi;
@@ -134,19 +138,35 @@ begin
     Application.MessageBox('Please, choose a Midi Input', 'Error');
   end else begin
     hasOns := false;
+    OutputDevIndex := cbxMidiOut.ItemIndex;
     if cbxMidiOut.ItemIndex > 0 then
       MidiOutput.Open(cbxMidiOut.ItemIndex-1);
 
+    for j := 1 to 6 do
+      for i := 0 to 127 do
+        Ons[j, i] := false;
+    for i := 0 to 6 do
+      OnMidiInData(0, $C0 + i, 21, 0, 0);
     MidiInput.OnMidiData := OnMidiInData;
-    OutputDevIndex := cbxMidiInput.ItemIndex;
-    MidiInput.Open(OutputDevIndex-1);
+    MidiInput.Open(cbxMidiInput.ItemIndex-1);
     btnStart.Caption := 'Stop Recording';
   end;
 end;
 
+procedure TMidiGriff.FormCloseQuery(Sender: TObject; var CanClose: Boolean);
+begin
+  CanClose := btnStart.Caption = 'Start Recording';
+end;
+
 procedure TMidiGriff.FormCreate(Sender: TObject);
 begin
+  CriticalMidiIn := TCriticalSection.Create;
   Header.Clear;
+end;
+
+procedure TMidiGriff.FormDestroy(Sender: TObject);
+begin
+  CriticalMidiIn.Free;
 end;
 
 procedure TMidiGriff.FormShow(Sender: TObject);
@@ -166,8 +186,6 @@ procedure AddLine(cbx: TComboBox);
 begin
   cbx.Items.Insert(0, '');
   cbx.ItemIndex := 0;
-  if cbx.Items.Count > 1 then
-    cbx.ItemIndex := 1;
 end;
 
 procedure TMidiGriff.RegenerateMidi;
@@ -179,6 +197,8 @@ begin
   AddLine(cbxMidiOut);
   InsertList(cbxMidiInput, MidiInput.DeviceNames);
   AddLine(cbxMidiInput);
+  if cbxMidiInput.Items.Count > 1 then
+    cbxMidiInput.ItemIndex := 1;
 end;
 
 procedure TMidiGriff.OnMidiInData(aDeviceIndex: integer; aStatus, aData1, aData2: byte; Timestamp: integer);
@@ -186,26 +206,36 @@ var
   Event: TMidiEvent;
   time, delta: TDateTime;
 begin
-  if eventCount >= Length(MidiEvents)-1 then
-    SetLength(MidiEvents, 2*Length(MidiEvents));
+  CriticalMidiIn.Acquire;
+  try
+    if eventCount >= Length(MidiEvents)-1 then
+      SetLength(MidiEvents, 2*Length(MidiEvents));
 
-  time := Now;
-  if eventCount = 0 then
+    time := Now;
+    if eventCount = 0 then
+      OldTime := time;
+    Event.Clear;
+    Event.command := aStatus;
+    if Event.Event = 9 then
+      hasOns := true;
+    Event.d1 := aData1;
+    Event.d2 := aData2;
+    MidiEvents[eventCount] := Event;
+    delta := 24*3600000.0*(time - OldTime); // ms
     OldTime := time;
-  Event.Clear;
-  Event.command := aStatus;
-  if Event.Event = 9 then
-    hasOns := true;
-  Event.d1 := aData1;
-  Event.d2 := aData2;
-  MidiEvents[eventCount] := Event;
-  delta := 24*3600000.0*(time - OldTime); // ms
-  OldTime := time;
-  if eventCount > 0 then
-    MidiEvents[eventCount-1].var_len := Header.MsDelayToTicks(round(delta));
-  inc(eventCount);
-  if OutputDevIndex > 0 then
-    MidiOutput.Send(OutputDevIndex-1, aStatus, aData1, aData2);
+    if eventCount > 0 then
+      MidiEvents[eventCount-1].var_len := Header.MsDelayToTicks(round(delta));
+    inc(eventCount);
+    if OutputDevIndex > 0 then
+      MidiOutput.Send(OutputDevIndex-1, aStatus, aData1, aData2);
+  {$ifdef CONSOLE}
+    writeln(aStatus, '  ', aData1, '  ', aData2);
+  {$endif}
+    if Event.command in [$81..$86, $91..$96] then
+      Ons[Event.Channel, Event.d1 and $7f] := Event.Event = 9;
+  finally
+    CriticalMidiIn.Release;
+  end;
 end;
 
 initialization
