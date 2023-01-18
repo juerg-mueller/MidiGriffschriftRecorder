@@ -52,7 +52,7 @@ var
   i, newCount: integer;
   SaveStream: TMidiSaveStream;
   name: string;
-  inpush: boolean;
+  inpush, isEvent: boolean;
 begin 
   // stream bereinigen
   i := 0;
@@ -73,10 +73,11 @@ begin
   newCount := 1;
   while i < eventCount do
   begin
-    if (MidiEvents[i].Event = 11) and (MidiEvents[i].d1 = $1f) and
-       (inpush = (MidiEvents[i].d2 <> 0)) then
+    isEvent := (MidiEvents[i].Event = 11) and (MidiEvents[i].d1 = $1f);
+    if not isEvent or (inpush <> (MidiEvents[i].d2 <> 0)) then
     begin
-    end else begin
+      if isEvent then
+        inpush := (MidiEvents[i].d2 <> 0);
       MidiEvents[newCount] := MidiEvents[i];
       inc(newCount);
     end;
