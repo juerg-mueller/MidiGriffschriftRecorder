@@ -19,6 +19,7 @@ type
     procedure FormShow(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure FormCloseQuery(Sender: TObject; var CanClose: Boolean);
+    procedure cbxMidiOutChange(Sender: TObject);
   private
     OutputDevIndex: integer;
     OldTime: TTime;
@@ -55,25 +56,26 @@ var
   inpush, isEvent: boolean;
 begin 
   // stream bereinigen
-  i := 0;
-  while (i < eventCount-2) and
-        (MidiEvents[i].Event = 11) and (MidiEvents[i+1].Event = 11) do
-    inc(i);
-  inpush := true;
-  if (MidiEvents[i].Event = 11) and (MidiEvents[i].d1 = $1f) then
+  newCount := 0;
+  while (newCount < eventCount) and (MidiEvents[newCount].Event = 12) do
   begin
-    inpush := MidiEvents[i].d2 <> 0;
-    MidiEvents[i].var_len := 0;
+    MidiEvents[newCount].var_len := 0;
+    inc(newCount);
   end;
-  inc(i);
 
-  while (i < eventCount) and (MidiEvents[eventCount-1].Event = 11) do
-    dec(eventCount);    
+  i := newCount;
+  while (i < eventCount-2) and
+        MidiEvents[i].IsSustain and MidiEvents[i+1].IsSustain do
+    inc(i);
 
-  newCount := 1;
+  while (i < eventCount) and MidiEvents[eventCount-1].IsSustain do
+    dec(eventCount);
+
+  inpush := true;
+  MidiEvents[i].var_len := 0;
   while i < eventCount do
   begin
-    isEvent := (MidiEvents[i].Event = 11) and (MidiEvents[i].d1 = $1f);
+    isEvent := MidiEvents[i].IsSustain;
     if not isEvent or (inpush <> (MidiEvents[i].d2 <> 0)) then
     begin
       if isEvent then
@@ -81,6 +83,9 @@ begin
       MidiEvents[newCount] := MidiEvents[i];
       inc(newCount);
     end;
+{$ifdef CONSOLE}
+   // writeln(newCount, '  ', MidiEvents[i].command, '  ', MidiEvents[i].d1, '  ', MidiEvents[i].d2);
+{$endif}
     inc(i);
   end;
   
@@ -139,6 +144,7 @@ begin
     Application.MessageBox('Please, choose a Midi Input', 'Error');
   end else begin
     hasOns := false;
+    eventCount := 0;
     OutputDevIndex := cbxMidiOut.ItemIndex;
     if cbxMidiOut.ItemIndex > 0 then
       MidiOutput.Open(cbxMidiOut.ItemIndex-1);
@@ -152,6 +158,11 @@ begin
     MidiInput.Open(cbxMidiInput.ItemIndex-1);
     btnStart.Caption := 'Stop Recording';
   end;
+end;
+
+procedure TMidiGriff.cbxMidiOutChange(Sender: TObject);
+begin
+//
 end;
 
 procedure TMidiGriff.FormCloseQuery(Sender: TObject; var CanClose: Boolean);

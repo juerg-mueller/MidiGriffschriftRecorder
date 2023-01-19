@@ -63,6 +63,7 @@ object MidiGriff: TMidiGriff
     Style = csDropDownList
     Anchors = [akLeft, akTop, akRight]
     TabOrder = 2
+    OnChange = cbxMidiOutChange
   end
   object SaveDialog1: TSaveDialog
     FileName = 'Recorded.mid'

@@ -9,14 +9,13 @@ unit UVirtual;
 interface
 
 var
-  LoopbackName: string = 'Midi loopback';
+  LoopbackName: string = 'MidiRecorder loopback';
   MidiVersion, MidiDriver: string;
 
 function DriverLoaded: boolean;
 function InstallLoopback: boolean;
 
 implementation
-
 
 uses
   SysUtils,
