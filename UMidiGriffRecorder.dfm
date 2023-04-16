@@ -14,10 +14,9 @@ object MidiGriff: TMidiGriff
   Font.Style = []
   OldCreateOrder = False
   Position = poScreenCenter
+  OnClose = FormClose
   OnCloseQuery = FormCloseQuery
   OnCreate = FormCreate
-  OnDestroy = FormDestroy
-  OnShow = FormShow
   DesignSize = (
     545
     108)
@@ -54,6 +53,7 @@ object MidiGriff: TMidiGriff
     Style = csDropDownList
     Anchors = [akLeft, akTop, akRight]
     TabOrder = 1
+    OnChange = cbxMidiInputChange
   end
   object cbxMidiOut: TComboBox
     Left = 135

@@ -27,9 +27,24 @@ uses
   LCLIntf, LCLType, LMessages,
 {$endif}
   Classes, SysUtils,
-  UMyMidiStream, UMidiEvent;
+  UMyMidiStream, UMidiEvent, syncobjs;
 
 type
+  TMidiRecord = class
+  private
+    CriticalMidiIn: syncobjs.TCriticalSection;
+  public
+    eventCount: integer;
+    MidiEvents: array of TMidiEvent;
+    hasOns: boolean;
+    OldTime: TTime;
+    Header: TDetailHeader;
+
+    constructor Create(const Head: TDetailHeader);
+    destructor Destroy;
+    procedure OnMidiInData(Status, Data1, Data2: byte);
+  end;
+
   TMidiSaveStream = class(TMyMidiStream)
   public
       Title: string;
@@ -42,10 +57,58 @@ type
       procedure AppendEvent(const Event: TMidiEvent); overload;
       procedure AppendEvent(command, d1, d2: byte); overload;
       procedure AppendMetaEvent(EventNr: byte; b: AnsiString);
+      class function BuildSaveStream(var MidiRec: TMidiRecord): TMidiSaveStream;
   end;
 
 implementation
 
+constructor TMidiRecord.Create(const Head: TDetailHeader);
+begin
+  CriticalMidiIn := TCriticalSection.Create;
+  eventCount := 0;
+  SetLength(MidiEvents, 1000000);
+  hasOns := false;
+  OldTime := 0;
+  Header := Head;
+end;
+
+destructor TMidiRecord.Destroy;
+begin
+  SetLength(MidiEvents, 0);
+  CriticalMidiIn.Free;
+end;
+
+procedure TMidiRecord.OnMidiInData(Status, Data1, Data2: byte);
+var
+  Event: TMidiEvent;
+  time, delta: TDateTime;
+begin
+  CriticalMidiIn.Acquire;
+  try
+    if eventCount >= Length(MidiEvents)-1 then
+      SetLength(MidiEvents, 2*Length(MidiEvents));
+
+    time := Now;
+    if eventCount = 0 then
+      OldTime := time;
+    Event.Clear;
+    Event.command := Status;
+    if Event.Event = 9 then
+      hasOns := true;
+    Event.d1 := Data1;
+    Event.d2 := Data2;
+    MidiEvents[eventCount] := Event;
+    delta := 24*3600000.0*(time - OldTime); // ms
+    OldTime := time;
+    if eventCount > 0 then
+      MidiEvents[eventCount-1].var_len := Header.MsDelayToTicks(round(delta));
+    inc(eventCount);
+  finally
+    CriticalMidiIn.Release;
+  end;
+end;
+
+////////////////////////////////////////////////////////////////////////////////
 
 constructor TMidiSaveStream.Create;
 begin
@@ -142,6 +205,71 @@ begin
   if (Command shr 4) in [8..11,14] then
     WriteByte(d2);
 end;
+
+class function TMidiSaveStream.BuildSaveStream(var MidiRec: TMidiRecord): TMidiSaveStream;
+var
+  i, newCount: integer;
+  SaveStream: TMidiSaveStream;
+  name: string;
+  inpush, isEvent: boolean;
+begin
+  result := nil;
+  if not MidiRec.hasOns then
+    exit;
+
+  // stream bereinigen
+  newCount := 0;
+  while (newCount < MidiRec.eventCount) and (MidiRec.MidiEvents[newCount].Event = 12) do
+  begin
+    MidiRec.MidiEvents[newCount].var_len := 0;
+    inc(newCount);
+  end;
+
+  i := newCount;
+  while (i < MidiRec.eventCount-2) and
+        MidiRec.MidiEvents[i].IsSustain and MidiRec.MidiEvents[i+1].IsSustain do
+    inc(i);
+
+  while (i < MidiRec.eventCount) and MidiRec.MidiEvents[MidiRec.eventCount-1].IsSustain do
+    dec(MidiRec.eventCount);
+
+  inpush := true;
+  MidiRec.MidiEvents[i].var_len := 0;
+  while i < MidiRec.eventCount do
+  begin
+    isEvent := MidiRec.MidiEvents[i].IsSustain;
+    if not isEvent or (inpush <> (MidiRec.MidiEvents[i].d2 <> 0)) then
+    begin
+      if isEvent then
+        inpush := (MidiRec.MidiEvents[i].d2 <> 0);
+      MidiRec.MidiEvents[newCount] := MidiRec.MidiEvents[i];
+      inc(newCount);
+    end;
+{$ifdef CONSOLE}
+   // writeln(newCount, '  ', MidiEvents[i].command, '  ', MidiEvents[i].d1, '  ', MidiEvents[i].d2);
+{$endif}
+    inc(i);
+  end;
+
+  SaveStream := TMidiSaveStream.Create;
+  try
+    SaveStream.SetSize(6*newCount + 10000);
+    SaveStream.Title := 'juerg5524.ch';
+    SaveStream.SetHead;
+    SaveStream.AppendTrackHead(0);
+    SaveStream.AppendHeaderMetaEvents(MidiRec.Header);
+    SaveStream.AppendTrackEnd(false);
+    SaveStream.AppendTrackHead(0);
+    for i := 0 to newCount-1 do
+      SaveStream.AppendEvent(MidiRec.MidiEvents[i]);
+    SaveStream.AppendTrackEnd(true);
+    result := SaveStream;
+  except
+    SaveStream.Free;
+  end;
+
+end;
+
 
 initialization
 
