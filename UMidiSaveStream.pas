@@ -27,7 +27,7 @@ uses
   LCLIntf, LCLType, LMessages,
 {$endif}
   Classes, SysUtils,
-  UMyMidiStream, UMidiEvent, syncobjs;
+  UMyMidiStream, UMidiDataStream, UMidiEvent, syncobjs;
 
 type
   TMidiRecord = class
@@ -41,11 +41,11 @@ type
     Header: TDetailHeader;
 
     constructor Create(const Head: TDetailHeader);
-    destructor Destroy;
+    destructor Destroy; override;
     procedure OnMidiInData(Status, Data1, Data2: byte);
   end;
 
-  TMidiSaveStream = class(TMyMidiStream)
+  TMidiSaveStream = class(TMidiDataStream)   //(TMyMidiStream)
   public
       Title: string;
       trackOffset: cardinal;
@@ -217,7 +217,7 @@ begin
   if not MidiRec.hasOns then
     exit;
 
-  // stream bereinigen
+  // Stream bereinigen
   newCount := 0;
   while (newCount < MidiRec.eventCount) and (MidiRec.MidiEvents[newCount].Event = 12) do
   begin

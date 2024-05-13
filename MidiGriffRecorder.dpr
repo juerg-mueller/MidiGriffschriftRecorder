@@ -9,7 +9,14 @@ uses
   UMidiSaveStream in 'UMidiSaveStream.pas',
   UMidiEvent in 'UMidiEvent.pas',
   UMyMemoryStream in 'UMyMemoryStream.pas',
-  UMyMidiStream in 'UMyMidiStream.pas';
+  UMyMidiStream in 'UMyMidiStream.pas',
+  UMidiDataStream in 'UMidiDataStream.pas',
+  UEventArray in 'UEventArray.pas';
+
+
+{$ifdef DEBUG}
+  {$APPTYPE CONSOLE}
+{$endif}
 
 {$R *.res}
 
