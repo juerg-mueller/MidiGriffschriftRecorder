@@ -114,7 +114,7 @@ end;
 
 constructor TMyMemoryStream.Create;
 begin
-  TMemoryStream.Create;
+  inherited;
 
   BigEndian := false;
 end;

@@ -1,11 +1,20 @@
-﻿unit UMidiGriffRecorder;
+unit UMidiGriffRecorder;
+
+{$IFDEF FPC}
+  {$MODE Delphi}
+{$ENDIF}
 
 interface
 
 uses
-  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
-  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, Vcl.CheckLst, UMidiEvent, syncobjs,
-  Vcl.ExtCtrls;
+  UMidi,
+{$ifdef mswindows}
+  Windows,
+{$endif}
+  Messages, SysUtils, Variants,
+  Classes, Graphics, Controls, Forms, Dialogs,
+  StdCtrls, CheckLst, UMidiEvent, syncobjs,
+  ExtCtrls;
 
 type
   TMidiGriff = class(TForm)
@@ -47,17 +56,10 @@ type
     InRecord: boolean;
     procedure SaveMidi;
   public
-    VolumeDiscant: double;
-    VolumeMetronom: double;
     Header: TDetailHeader;
-    Metronom: boolean;
-    NurTakt: boolean;
-    pipCount: integer;
-    nextPip: TTime;
-    pipDelay: TTime;
+    Metronom: TMetronom;
 
-
-    procedure OnMidiInData(InDeviceIndex: integer; Status, Data1, Data2: byte; Timestamp: integer);
+    procedure OnMidiInData(InDeviceIndex: integer; Status, Data1, Data2: byte; Timestamp: Int64);
   end;
 
 var
@@ -65,31 +67,33 @@ var
 
 implementation
 
-{$R *.dfm}
+{$IFnDEF FPC}
+  {$R *.dfm}
+{$ELSE}
+  {$R *.lfm}
+{$ENDIF}
 
 uses
-  Midi, UMidiSaveStream, UMidiDataStream;
+{$if defined(mswindows) and not defined(Win64)}
+  Midi,
+{$else}
+  URtMidi,
+{$endif}
+  UMidiSaveStream, UMidiDataStream, UMidiDataIn;
 
 
 var
-  MidiRec: TMidiRecord;
-
-  pipFirst: byte = 59;
-  pipSecond: byte = 69;
-  pipChannel: byte = 9;
-
-  VolumeDiscant: double = 0.9;
-  VolumeMetronom: double = 0.8;
-
+  MidiEventRecorder: TMidiEventRecorder;
 
 procedure TMidiGriff.SaveMidi;
 var
   name: string;
-  SaveStream: UMidiSaveStream.TMidiSaveStream;
+  SaveStream: TMidiDataStream;
   Simple: TSimpleDataStream;
   i: integer;
 begin
-  SaveStream := UMidiSaveStream.TMidiSaveStream.BuildSaveStream(MidiRec);
+  SaveStream := MidiEventRecorder.MakeRecordStream;
+
   if SaveStream <> nil then
   begin
     name := 'griff_recorder';
@@ -108,7 +112,7 @@ begin
     begin
       Simple.SaveToFile(name + '.txt');
     end;
-    Application.MessageBox(PWideChar(name + ' saved'), '');
+    Application.MessageBox(PChar(name + ' saved'), '');
     SaveStream.Free;
   end;                
 end;
@@ -130,73 +134,12 @@ begin
 end;
 
 procedure TMidiGriff.Timer1Timer(Sender: TObject);
-var
-  Event: TMouseEvent;
-  Key: word;
-  BPM, mDiv: integer;
-  sec: boolean;
-  pip: byte;
-  vol: double;
-
-  procedure SendMidiOut(Status, Data1, Data2: byte);
-  begin
-    Status := Status + pipChannel;
-    OnMidiInData(MicrosoftIndex, Status, Data1, Data2, 0);
-    MidiOutput.Send(MicrosoftIndex, Status, Data1, Data2);
-  end;
-
 begin
-  if Metronom then
+  if Metronom.DoPip(Header) then
   begin
-    BPM := Header.beatsPerMin;
-    mDiv := Header.measureDiv; // ist 4 oder 8
-    if NurTakt then
-      sec := false
-    else
-    if mDiv = 8 then
-    begin
-      BPM := 2*BPM;
-      sec := (Header.measureFact = 6) and (pipCount = 3);
-    end else
-      sec := true;
-    pip := 0;
-    if pipCount = 0 then
-      pip := pipFirst
-    else
-    if sec then
-      pip := pipSecond;
-    if Now >= nextPip then
-    begin
-      vol := 100*VolumeMetronom;
-      if vol > 126 then
-        vol := 126;
-      if pip > 0 then
-      begin
-        SendMidiOut($90, pip, trunc(vol));
-        if pipCount = 0 then
-        begin
-       //   pipPaint(true);
-        end;
-      end;
-      nextPip := Now + 1/(24.0*60.0)/BPM;
-      pipDelay := Now + 0.1/(24*3600);
-    end else
-    if (Now >= pipDelay) and (pipDelay > 0) then
-    begin
-      pipDelay := 0;
-      if pip > 0 then
-      begin
-        if pip > 0 then
-          SendMidiOut($80, pip, 64);
-        if pipCount = 0 then
-        begin
-          //pipPaint(false);
-        end;
-      end;
-      inc(pipCount);
-      if pipCount >= Header.measureFact then
-        pipCount := 0;
-    end;
+    if InRecord and Metronom.IsFirst then // Taktbeginn
+      MidiEventRecorder.Append(Metronom.MidiEvent);
+    SendMidiEvent(Metronom.MidiEvent);
   end;
 end;
 
@@ -204,34 +147,31 @@ procedure TMidiGriff.btnStartClick(Sender: TObject);
 var
   i, j: integer;
 begin
-  if btnStart.Caption = 'Stop Recording' then
+  if btnStart.Caption = 'Aufnahme stoppen' then
   begin
     InRecord := false;
-    btnStart.Caption := 'Start Recording';
+    btnStart.Caption := 'Aufnahme starten';
     if OutputDevIndex > 0 then
     begin
       for j := 1 to 7 do
         MidiOutput.Send(OutputDevIndex-1, $B0 + j, 120, 0);
     end;
-    MidiOutput.CloseAll;    
+    MidiEventRecorder.Stop;
     SaveMidi;
-    FreeAndNil(MidiRec);
   end else
   if cbxMidiInput.ItemIndex < 1 then
   begin
-    Application.MessageBox('Please, choose a Midi Input', 'Error');
+    Application.MessageBox('Bitte, MIDI Input wählen', 'Fehler');
   end else begin
-    MidiRec := TMidiRecord.Create(Header);
+    MidiEventRecorder.Start;
     InRecord := true;
-    for i := 0 to 7 do
-      OnMidiInData(0, $C0 + i, 21, 0, 0);
-    btnStart.Caption := 'Stop Recording';
+    btnStart.Caption := 'Aufnahme stoppen';
   end;
 end;
 
 procedure TMidiGriff.cbxMetronomClick(Sender: TObject);
 begin
-  Metronom := cbxMetronom.Checked;
+  Metronom.SetOn(cbxMetronom.Checked);
 end;
 
 procedure TMidiGriff.cbxMidiInputChange(Sender: TObject);
@@ -271,6 +211,7 @@ end;
 procedure TMidiGriff.cbxTaktChange(Sender: TObject);
 begin
   Header.measureFact := cbxTakt.ItemIndex + 2;
+  MidiEventRecorder.Header := Header;
 end;
 
 procedure TMidiGriff.cbxViertelChange(Sender: TObject);
@@ -283,29 +224,31 @@ begin
     else q := 4;
   end;
   Header.MeasureDiv :=  q;
+  MidiEventRecorder.Header := Header;
 end;
 
 procedure TMidiGriff.edtBPMExit(Sender: TObject);
 begin
-  Header.beatsPerMin := StrToInt(edtBPM.Text);
+  Header.QuarterPerMin := StrToInt(edtBPM.Text);
   cbxViertelChange(Sender);
 end;
 
 procedure TMidiGriff.FormClose(Sender: TObject; var Action: TCloseAction);
 begin
   MidiInput.CloseAll;
+  MidiEventRecorder.Free;
 end;
 
 procedure TMidiGriff.FormCloseQuery(Sender: TObject; var CanClose: Boolean);
 begin
-  CanClose := btnStart.Caption = 'Start Recording';
+  CanClose := not InRecord;
 end;
 
-procedure InsertList(Combo: TComboBox; arr: TStringList);
+procedure InsertList(Combo: TComboBox; arr: array of string);
 var
   i: integer;
 begin
-  for i := 0 to arr.Count-1 do
+  for i := 0 to Length(arr)-1 do
     Combo.AddItem(arr[i], nil);
 end;
 
@@ -317,10 +260,12 @@ end;
 
 procedure TMidiGriff.FormCreate(Sender: TObject);
 begin
+  InRecord := false;
+  MidiEventRecorder := TMidiEventRecorder.Create;
   MidiOutput.GenerateList;
   MidiInput.GenerateList;
-  InRecord := false;
-
+  Header.Clear;
+  MidiEventRecorder.Header := Header;
   InsertList(cbxMidiOut, MidiOutput.DeviceNames);
   AddLine(cbxMidiOut);
   cbxMidiOut.ItemIndex := 0;
@@ -332,12 +277,15 @@ begin
   Header.Clear;
 end;
 
-procedure TMidiGriff.OnMidiInData(InDeviceIndex: integer; Status, Data1, Data2: byte; Timestamp: integer);
+procedure TMidiGriff.OnMidiInData(InDeviceIndex: integer; Status, Data1, Data2: byte; Timestamp: Int64);
+var
+  Event: TMidiEvent;
 begin
+  Event.SetEvent(Status, Data1, Data2);
   if InRecord then
-    MidiRec.OnMidiInData(Status, Data1, Data2);
+    MidiEventRecorder.Append(Event);
 {$ifdef CONSOLE}
-  writeln(Status, '  ', Data1, '  ', Data2);
+//  writeln(Status, '  ', Data1, '  ', Data2);
 {$endif}
   if OutputDevIndex > 0 then
     MidiOutput.Send(OutputDevIndex-1, Status, Data1, Data2);

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2020 Jürg Müller, CH-5524
+// Copyright (C) 2020 JÃ¼rg MÃ¼ller, CH-5524
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
@@ -16,9 +16,9 @@
 
 unit UMyMidiStream;
 
-{$ifdef FPC}
+{$IFDEF FPC}
   {$MODE Delphi}
-{$endif}
+{$ENDIF}
 
 interface
 
@@ -50,9 +50,9 @@ procedure TMyMidiStream.MidiWait(Delay: integer);
 var
   NewTime: TDateTime;
 begin
-  if (Delay > 0) and (MidiHeader.Details.DeltaTimeTicks > 0) then
+  if (Delay > 0) and (MidiHeader.Details.TicksPerQuarter > 0) then
   begin
-    Delay := trunc(2*Delay*192.0 / MidiHeader.Details.DeltaTimeTicks);
+    Delay := trunc(2*Delay*192.0 / MidiHeader.Details.TicksPerQuarter);
     if Delay > 2000 then
       Delay := 1000;
 {$if false}
@@ -73,7 +73,7 @@ end;
 
 procedure TMyMidiStream.StartMidi;
 begin
-  time := now;
+  time := GetTickCount64;
 end;
 
 function TMyMidiStream.ReadByte: byte;

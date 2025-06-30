@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2021 Jürg Müller, CH-5524
+// Copyright (C) 2021 JÃ¼rg MÃ¼ller, CH-5524
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
@@ -33,7 +33,7 @@ const
 type
   TCopyright = (noCopy, prepCopy, griffCopy, realCopy, newCopy);
 
-  TMidiEventArray = array of TMidiEvent;
+  //TMidiEventArray = array of TMidiEvent;
   PMidiEventArray = ^TMidiEventArray;
   TChannelEventArray = array [0..15] of TMidiEventArray;
   TTrackEventArray = array of TMidiEventArray;
@@ -125,10 +125,8 @@ type
 implementation
 
 uses
-{$ifdef LINUX}
-  Urtmidi,
-{$else}
-  AnsiStrings,
+  UMidi,
+{$if defined(mswindows) and not defined(Win64)}
   Midi,
 {$endif}
   UMidiDataStream;
@@ -246,9 +244,9 @@ begin
       if not Lyrics then
       begin
         WriteTrackHeader(0);
-        if DetailHeader.beatsPerMin > 0 then
+        if DetailHeader.QuarterPerMin > 0 then
         begin
-          bpm := 6e7 / DetailHeader.beatsPerMin;
+          bpm := 6e7 / DetailHeader.QuarterPerMin;
           l := round(bpm);
           WriteString('    0 ' + cSimpleMetaEvent + ' 255 81 3 '); // beats
           WritelnString(IntToStr(l shr 16) + ' ' + IntToStr((l shr 8) and $ff) + ' ' +
@@ -290,7 +288,7 @@ begin
           end;
           if Event.Event = 9 then
           begin
-            takt := Offset div MidiHeader.Details.DeltaTimeTicks;
+            takt := Offset div MidiHeader.Details.TicksPerQuarter;
             if MidiHeader.Details.measureDiv = 8 then
               takt := 2*takt;
             d := MidiHeader.Details.measureFact;
@@ -321,7 +319,7 @@ var
 begin
   SaveStream := TMidiSaveStream.Create;
   try
-    SaveStream.SetHead(DetailHeader.DeltaTimeTicks);
+    SaveStream.SetHead(DetailHeader.TicksPerQuarter);
     SaveStream.AppendTrackHead;
     SaveStream.AppendHeaderMetaEvents(DetailHeader);
     SaveStream.AppendTrackEnd(false);
@@ -357,7 +355,23 @@ begin
       result := false;
 end;
 
-
+{$ifdef FPC}
+function TEventArray.GetCopyright: TCopyright;
+begin
+  result := noCopy;
+  if AnsiStrLComp(PAnsiChar(Copyright), PAnsiChar(Copyrightreal), Length('real Griffschrift - Copyright')) = 0 then
+    result := realCopy
+  else
+  if AnsiStrLComp(PAnsiChar(Copyright), PAnsiChar(CopyrightGriff), Length('Griffschrift - Copyright')) = 0 then
+    result := griffCopy
+  else
+  if AnsiStrLComp(PAnsiChar(Copyright), PAnsiChar(CopyrightNewGriff), Length('Griffschrift - Copyright')) = 0 then
+    result := newCopy
+  else
+  if Copyright = CopyPrep then
+    result := prepCopy;
+end;
+{$else}
 function TEventArray.GetCopyright: TCopyright;
 begin
   result := noCopy;
@@ -373,6 +387,7 @@ begin
   if Copyright = CopyPrep then
     result := prepCopy;
 end;
+{$endif}
 
 function TEventArray.CheckMysOergeli: boolean;
 var
@@ -542,12 +557,12 @@ var
   event: TMidiEvent;
   add: integer;
 begin
-  // Kanäle 0 und 3: diskant
-  // Kanäle 1 und 4: 3-Klang Bass
-  // Kanal 2:        Bass (monophon) / Grundton von Kanal 1 liegt eine Oktave höher
-  // Kanal 5:        Kanal 2 genau eine Oktave höher
+  // KanÃ¤le 0 und 3: diskant
+  // KanÃ¤le 1 und 4: 3-Klang Bass
+  // Kanal 2:        Bass (monophon) / Grundton von Kanal 1 liegt eine Oktave hÃ¶her
+  // Kanal 5:        Kanal 2 genau eine Oktave hÃ¶her
 
-  // kurze Töne entfernen
+  // kurze TÃ¶ne entfernen
   max := Length(ChannelEvents[Diskant]);
   i := 0;
   k := i;
@@ -1107,7 +1122,7 @@ begin
     inc(iEvent);
     if Event.Event <> 15 then
     begin
-      MidiOutput.Send(MicrosoftIndex, Event.command, Event.d1, Event.d2);
+ //     MidiOutput.Send(MicrosoftIndex, Event.command, Event.d1, Event.d2);
     end;
 
     if Assigned(SetPlayEvent) then
@@ -1127,7 +1142,7 @@ begin
                   ' of ' + DetailHeader.TicksToString(len);
       sleep(4);
     {$ifdef LINUX}
-      UfrmSelector.Channel_Selection.lbPlayLength.Caption := Pos^;
+   //   UfrmSelector.Channel_Selection.lbPlayLength.Caption := Pos^;
 //      Application.ProcessMessages;
     {$endif}
     end;
@@ -1142,11 +1157,8 @@ begin
       SetPlayEvent(Event);
     end;
 
-{$ifdef LINUX}
-  MidiOutput.Reset
-{$else}
-  ResetMidi;
-
+  ResetMidiOut;
+{$ifndef LINUX}
   Terminate;
   while not Terminated_ do
     Sleep(1);

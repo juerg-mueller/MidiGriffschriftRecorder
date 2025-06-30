@@ -1,10 +1,14 @@
 //
 // Vorlage ist: teVirtualMIDITest.dpr
 //
-// Diese Unit aus dem Projekt entfernen und das Projekt l‰sst sich ohne
+// Diese Unit aus dem Projekt entfernen und das Projekt l√§sst sich ohne
 // "VirtualMidi" generieren.
 //
 unit UVirtual;
+
+{$IFDEF FPC}
+  {$MODE Delphi}
+{$ENDIF}
 
 interface
 
@@ -18,8 +22,11 @@ function InstallLoopback: boolean;
 implementation
 
 uses
-  SysUtils,
+{$IFnDEF FPC}
   teVirtualMIDIdll,
+{$ELSE}
+{$ENDIF}
+  SysUtils,
   Midi;
 
 var

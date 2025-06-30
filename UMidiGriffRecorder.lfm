@@ -1,0 +1,215 @@
+object MidiGriff: TMidiGriff
+  Left = 741
+  Height = 310
+  Top = 551
+  Width = 564
+  Caption = 'MIDI Recorder'
+  ClientHeight = 310
+  ClientWidth = 564
+  Color = clBtnFace
+  Font.Color = clWindowText
+  Font.Height = -11
+  Font.Name = 'Tahoma'
+  OnClose = FormClose
+  OnCloseQuery = FormCloseQuery
+  OnCreate = FormCreate
+  Position = poScreenCenter
+  LCLVersion = '3.6.0.0'
+  object GroupBox1: TGroupBox
+    Left = 0
+    Height = 126
+    Top = 0
+    Width = 564
+    Align = alClient
+    Caption = 'MIDI'
+    ClientHeight = 109
+    ClientWidth = 562
+    ParentBackground = False
+    TabOrder = 0
+    object Label17: TLabel
+      Left = 35
+      Height = 16
+      Top = 75
+      Width = 87
+      Caption = 'Synthesizer (out)'
+    end
+    object lblKeyboard: TLabel
+      Left = 35
+      Height = 16
+      Top = 32
+      Width = 76
+      Caption = 'Harmonica (in)'
+    end
+    object btnStart: TButton
+      Left = 431
+      Height = 25
+      Top = 71
+      Width = 112
+      Caption = 'Aufnahme starten'
+      TabOrder = 0
+      OnClick = btnStartClick
+    end
+    object cbxMidiInput: TComboBox
+      Left = 135
+      Height = 32
+      Top = 24
+      Width = 280
+      Anchors = [akTop, akLeft, akRight]
+      ItemHeight = 0
+      Style = csDropDownList
+      TabOrder = 1
+      OnChange = cbxMidiInputChange
+    end
+    object cbxMidiOut: TComboBox
+      Left = 135
+      Height = 32
+      Top = 67
+      Width = 280
+      Anchors = [akTop, akLeft, akRight]
+      ItemHeight = 0
+      Style = csDropDownList
+      TabOrder = 2
+      OnChange = cbxMidiOutChange
+    end
+  end
+  object gbHeader: TGroupBox
+    Left = 0
+    Height = 184
+    Top = 126
+    Width = 564
+    Align = alBottom
+    Caption = 'Taktangaben'
+    ClientHeight = 167
+    ClientWidth = 562
+    ParentBackground = False
+    TabOrder = 1
+    object Label8: TLabel
+      Left = 24
+      Height = 16
+      Top = 34
+      Width = 21
+      Caption = 'Takt'
+    end
+    object Label12: TLabel
+      Left = 24
+      Height = 16
+      Top = 57
+      Width = 95
+      Caption = 'Viertel pro Minute'
+    end
+    object Label2: TLabel
+      Left = 24
+      Height = 16
+      Top = 116
+      Width = 55
+      Caption = 'Metronom'
+    end
+    object lbBegleitung: TLabel
+      Left = 24
+      Height = 16
+      Top = 95
+      Width = 55
+      Caption = 'Lautstärke'
+    end
+    object Label10: TLabel
+      Left = 24
+      Height = 16
+      Top = 137
+      Width = 44
+      Caption = 'Nur Takt'
+    end
+    object cbxViertel: TComboBox
+      Left = 198
+      Height = 28
+      Top = 29
+      Width = 70
+      ItemHeight = 0
+      ItemIndex = 0
+      Items.Strings = (
+        'Viertel'
+        'Achtel'
+      )
+      Style = csDropDownList
+      TabOrder = 1
+      Text = 'Viertel'
+      OnChange = cbxViertelChange
+    end
+    object cbxTakt: TComboBox
+      Left = 122
+      Height = 28
+      Top = 29
+      Width = 70
+      ItemHeight = 0
+      ItemIndex = 2
+      Items.Strings = (
+        '2'
+        '3'
+        '4'
+        '5'
+        '6'
+        '7'
+        '8'
+        '9'
+        '10'
+        '11'
+        '12'
+      )
+      Style = csDropDownList
+      TabOrder = 0
+      Text = '4'
+      OnChange = cbxTaktChange
+    end
+    object edtBPM: TEdit
+      Left = 122
+      Height = 28
+      Top = 56
+      Width = 70
+      Alignment = taRightJustify
+      TabOrder = 2
+      Text = '120'
+      OnExit = edtBPMExit
+    end
+    object cbxMetronom: TCheckBox
+      Left = 122
+      Height = 21
+      Top = 114
+      Width = 21
+      TabOrder = 4
+      OnClick = cbxMetronomClick
+    end
+    object sbMetronom: TScrollBar
+      Left = 122
+      Height = 20
+      Top = 91
+      Width = 293
+      Anchors = [akTop, akLeft, akRight]
+      Max = 120
+      Min = 20
+      PageSize = 0
+      Position = 80
+      TabOrder = 3
+      OnChange = sbMetronomChange
+    end
+    object cbxNurTakt: TCheckBox
+      Left = 122
+      Height = 21
+      Top = 134
+      Width = 21
+      TabOrder = 5
+      OnClick = cbxNurTaktClick
+    end
+  end
+  object SaveDialog1: TSaveDialog
+    FileName = 'Recorded.mid'
+    Filter = 'MIDI|*.mid'
+    InitialDir = '.'
+    Left = 464
+    Top = 16
+  end
+  object Timer1: TTimer
+    Interval = 1
+    OnTimer = Timer1Timer
+    Left = 424
+    Top = 176
+  end
+end

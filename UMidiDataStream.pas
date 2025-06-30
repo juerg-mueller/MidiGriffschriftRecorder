@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2020 Jürg Müller, CH-5524
+// Copyright (C) 2020 JÃ¼rg MÃ¼ller, CH-5524
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
@@ -16,13 +16,22 @@
 
 unit UMidiDataStream;
 
+{$IFDEF FPC}
+  {$MODE Delphi}
+{$ENDIF}
+
 interface
 
 uses
 {$if defined(__INSTRUMENTS__)}
   UInstrument,
 {$endif}
-  Classes, SysUtils, windows,
+{$IFnDEF FPC}
+  windows,
+{$ELSE}
+  LCLIntf, LCLType, LMessages,
+{$ENDIF}
+  Classes, SysUtils,
   UMyMidiStream, UEventArray, UMidiEvent;
 
 const
@@ -92,7 +101,7 @@ type
       Titel: string;
       trackOffset: cardinal;
       constructor Create;
-      procedure SetHead(DeltaTimeTicks: integer = 192);
+      procedure SetHead(TicksPerQuarter: integer = 192);
       procedure AppendTrackHead(delay: integer = 0);
       procedure AppendHeaderMetaEvents(const Details: TDetailHeader);
       procedure AppendTrackEnd(IsLastTrack: boolean);
@@ -117,7 +126,7 @@ procedure MidiConverterDirTest(const DirName: string; var Text: System.Text);
 {$endif}
 implementation
 
-
+{$if false}
 function IsRunningInWine: boolean;
 type
   TWineVers = function: PAnsiChar; cdecl;
@@ -136,6 +145,7 @@ begin
 {$endif}
   RunningWine := result;
 end;
+{$endif}
 
 constructor TMidiDataStream.Create;
 begin
@@ -148,7 +158,7 @@ begin
   WriteCardinal(6);     
   WriteWord(Header.FileFormat);   
   WriteWord(Header.TrackCount);
-  WriteWord(Header.Details.DeltaTimeTicks);
+  WriteWord(Header.Details.TicksPerQuarter);
 end;
 
 function TMidiDataStream.ReadVariableLen: cardinal;
@@ -211,13 +221,13 @@ begin
   if Size - Position < ChunkSize then
   begin
     if RaiseExcept then
-      raise Exception.Create('Restliche Dateigrösse kleiner als die angegebene Chunkgrösse!');
+      raise Exception.Create('Restliche DateigrÃ¶sse kleiner als die angegebene ChunkgrÃ¶sse!');
     exit;
   end;
   MidiHeader.Clear;
   MidiHeader.FileFormat := ReadWord;             
   MidiHeader.TrackCount := ReadWord;
-  MidiHeader.Details.DeltaTimeTicks := ReadWord;
+  MidiHeader.Details.TicksPerQuarter := ReadWord;
 
   result := ChunkSize = 6;
 end;
@@ -237,7 +247,7 @@ begin
      (event.command <> $f0) then
     event.d2 := ReadByte;
   if not (event.event in [$f]) then
-    event.var_len := ReadVariableLen;  // eigentlich auch für den Meta-Event ff
+    event.var_len := ReadVariableLen;  // eigentlich auch fÃ¼r den Meta-Event ff
 
   result := true;
 end;
@@ -383,7 +393,7 @@ begin
   if (Size - Position + 2 < Header.ChunkSize) then
   begin
 //    if RaiseExcept then
-//      raise Exception.Create('Restliche Dateigröße kleiner als die angegebene Chunkgröße!');
+//      raise Exception.Create('Restliche DateigrÃ¶ÃŸe kleiner als die angegebene ChunkgrÃ¶ÃŸe!');
   end;
   result := true;
 end;
@@ -469,7 +479,7 @@ begin
         inc(iEvent);
       end;
 
-      if (iEvent > 0) and ((Event.Event in [8, 9]) or Event.IsSustain) then
+      if (iEvent > 0) and ((Event.Event in [8, 9]) or Event.IsPushPull) then
       begin
         if (Event.Event = 9) and (Event.d2 = 0) then
         begin
@@ -804,9 +814,8 @@ procedure TSimpleDataStream.WriteHeader(const Header: TMidiHeader);
 begin
   with Header do
   begin
-    WritelnString(cSimpleHeader + ' ' + IntToStr(ord(FileFormat)) + ' ' + 
-                  IntToStr(TrackCount) + ' ' + IntToStr(Details.DeltaTimeTicks) +
-                  ' ' + IntToStr(Details.beatsPerMin));
+    WritelnString(Format(cSimpleHeader + ' %d %d %d %d  - Fileformat  TrackCount  TicksPerQuarter  QuarterPerMin',
+                  [ord(FileFormat), TrackCount, Details.TicksPerQuarter, Details.QuarterPerMin]));
   end;
 end;
 
@@ -824,7 +833,11 @@ var
   TrackHeader: TTrackHeader;
   event: TMidiEvent;
   i: integer;
+  ba: array of byte;
   b: byte;
+  Offset: integer;
+  Takt: double;
+  d: double;
 begin
   result := false;
   SetSize(10000000);
@@ -838,8 +851,11 @@ begin
   try
     if not MidiFile.ReadMidiHeader(false) then
       exit;
-      
+
+    Offset := 0;
+    MidiHeader.Clear;
     WriteHeader(MidiFile.MidiHeader);
+
 
     while MidiFile.Position < MidiFile.Size do
     begin
@@ -847,7 +863,8 @@ begin
         exit;
 
       WriteTrackHeader(TrackHeader.DeltaTime);
-      
+      Offset := TrackHeader.DeltaTime;
+
       while MidiFile.ChunkSize > 0 do
       begin
         if not MidiFile.ReadMidiEvent(event) then
@@ -861,15 +878,35 @@ begin
           $F: begin
               WriteString(cSimpleMetaEvent + ' ' + IntToStr(event.command) + ' ' + 
                 IntToStr(event.d1) + ' ' + IntToStr(event.d2));
-              for i := 1 to event.d2 do begin
-                b := MidiFile.ReadByte;
-                WriteString(' ' + IntToStr(b));
+              SetLength(ba, event.d2);
+              for i := 0 to event.d2-1 do begin
+                ba[i] := MidiFile.ReadByte;
+                WriteString(' ' + IntToStr(ba[i]));
               end;
               if event.d2 > 0 then 
               begin
                 i := MidiFile.ReadVariableLen;
                 WriteString(' ' + IntToStr(i));
+                inc(Offset, i);
               end;
+              if event.d1 <= 6 then
+              begin
+                WriteString('  ');
+                for i := 0 to Length(ba)-1 do
+                  if (ba[i] >= ord(' ')) and (ba[i] <= 126) then
+                    WriteString(AnsiChar(ba[i]))
+                  else
+                    WriteString('.');
+              end;
+              if MidiHeader.Details.SetTimeSignature(event, ba) then
+              begin
+                WriteString(Format('  - %d/%d Takt', [MidiHeader.Details.measureFact, MidiHeader.Details.measureDiv]));
+              end;
+              if MidiHeader.Details.SetQuarterPerMin(event, ba) then
+              begin
+                WriteString(Format('  - %d Viertel pro Min.', [MidiHeader.Details.QuarterPerMin]));
+              end;
+              MidiHeader.Details.SetDurMinor(event, ba);
             end;
           8..14: begin
               if HexOutput then
@@ -878,6 +915,17 @@ begin
               else
                 WriteString(Format('%5d %3d %3d %3d', 
                                    [event.var_len, event.command, event.d1, event.d2]));
+              if event.Event = 9 then
+              begin
+                takt := Offset / MidiHeader.Details.TicksPerQuarter;
+                if MidiHeader.Details.measureDiv = 8 then
+                  takt := 2*takt;
+                d := MidiHeader.Details.measureFact;
+                WriteString(Format('  Takt: %.2f', [takt / d + 1]));
+
+                WriteString(MidiNote(event.d1));
+              end;
+              inc(Offset, event.var_len);
             end;
           else begin end;
         end;
@@ -919,8 +967,8 @@ begin
 
     MidiHeader.FileFormat := ReadNumber;
     MidiHeader.TrackCount := ReadNumber;
-    MidiHeader.Details.DeltaTimeTicks := ReadNumber;
-    MidiHeader.Details.beatsPerMin := ReadNumber;
+    MidiHeader.Details.TicksPerQuarter := ReadNumber;
+    MidiHeader.Details.QuarterPerMin := ReadNumber;
   end;
   ReadLine;
 end;
@@ -1022,7 +1070,7 @@ begin
   WriteCardinal(6);
   WriteWord(1);              // file format                          + 8
   WriteWord(0);              // track count                          + 10
-  WriteWord(DeltaTimeTicks); // delta time ticks per quarter note    + 12
+  WriteWord(TicksPerQuarter); // delta time ticks per quarter note    + 12
 end;
 
 procedure TMidiSaveStream.AppendHeaderMetaEvents(const Details: TDetailHeader);
@@ -1282,22 +1330,9 @@ begin
   end;
 end;
 {$endif}
-{
-var
-  Stream: TMidiSaveStream;
-  Tracks: TTrackEventArray;
-}
+
 initialization
-  IsRunningInWine;
-{
-  Stream := TMidiSaveStream.Create;
-  Stream.LoadFromFile('D:/Dokumente/Louis/RS-Player/Ferien am Murtensee.mid');
-  Stream.MakeMidiTrackEvents(Tracks);
-  if Length(Tracks) >= 2 then
-//     TEventArray.ReduceBass(Tracks[1]);
-//  Stream.MakeMidiTracksFile(Tracks);
-//  Stream.SaveToFile('t.mid');
-}
+
 finalization
 
 end.

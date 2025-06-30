@@ -32,7 +32,7 @@ const
 type
   
   // event if data is received
-  TOnMidiInData = procedure (aDeviceIndex: integer; aStatus, aData1, aData2: byte; Timestamp: integer) of object;
+  TOnMidiInData = procedure (aDeviceIndex: integer; aStatus, aData1, aData2: byte; Timestamp: Int64) of object;
   // event of system exclusive data is received
   TOnSysExData = procedure (aDeviceIndex: integer; const aStream: TMemoryStream) of object;
 
@@ -44,12 +44,13 @@ type
   // base class for MIDI devices
   TMidiDevices = class
   private
-    fDeviceNames: TStringList;
     fMidiResult: MMResult;
     procedure SetMidiResult(const Value: MMResult);
   protected
     property MidiResult: MMResult read fMidiResult write SetMidiResult;
   public
+    DeviceNames: array of string;
+    Handles: array of THandle;
     constructor Create; virtual;
     destructor Destroy; override;
     function GetHandle(const aDeviceIndex: TDeviceIndex): THandle;
@@ -58,8 +59,6 @@ type
     function IsOpen(const aDeviceIndex: integer) : boolean; virtual;
    // close all devices
     procedure CloseAll;
-    // the devices
-    property DeviceNames: TStringList read fDeviceNames;
   end;
 
   // MIDI input devices
@@ -79,7 +78,7 @@ type
     procedure Close(const aDeviceIndex: TDeviceIndex); override; 
     class procedure Free_Instance; 
     procedure GenerateList;
-    function GetSysDeviceIndex(name: string): TSysDeviceIndex; 
+    function GetSysDeviceIndex(name: string): TSysDeviceIndex;
     // midi data event
     property OnMidiData: TOnMidiInData read fOnMidiData write fOnMidiData;
     // midi system exclusive is received
@@ -97,28 +96,26 @@ type
     procedure Close(const aDeviceIndex: TDeviceIndex); override;
     // send some midi data to the indexed device
     procedure Send(const aDeviceIndex: TDeviceIndex; const aStatus, aData1, aData2: byte);
+    procedure Reset;
     class procedure Free_Instance;
     procedure GenerateList;
     function GetSysDeviceIndex(name: string): TSysDeviceIndex; 
   end;
+
+  TChannels = set of 0..15;
 
   // MIDI input devices
   function MidiInput: TMidiInput;
   // MIDI output Devices
   function MidiOutput: TMidiOutput;
 
-  procedure DoSoundPitch(Pitch: byte; On_: boolean);
-  procedure ResetMidi;
 
 const
   MicrosoftSync = 'Microsoft GS Wavetable Synth';
-  
-var
-  MicrosoftIndex: integer = 0;
-  TrueMicrosoftIndex: integer = -1;
-  MidiInstr: byte = $15; // Akkordeon
 
-procedure OpenMidiMicrosoft;
+var
+  MicrosoftIndex: integer = -1;
+  TrueMicrosoftIndex: integer = -1;
 
 implementation
 
@@ -150,12 +147,12 @@ end;
 constructor TMidiDevices.Create;
 begin
   inherited;
-  fDeviceNames := TStringList.Create;
+  SetLength(DeviceNames, 0);
 end;
 
 destructor TMidiDevices.Destroy;
 begin
-  FreeAndNil(fDeviceNames);
+  SetLength(DeviceNames, 0);
   inherited;
 end;
 
@@ -171,10 +168,10 @@ end;
 
 function TMidiDevices.GetHandle(const aDeviceIndex: TDeviceIndex): THandle;
 begin
-  if not InRange(aDeviceIndex, 0, fDeviceNames.Count - 1) then
+  if (aDeviceIndex < 0) or (aDeviceIndex >= Length(DeviceNames)) then
     raise EMidiDevices.CreateFmt('%s: Device index out of bounds! (%d)', [ClassName,aDeviceIndex]);
 
-  Result := THandle(fDeviceNames.Objects[ aDeviceIndex ]);
+  Result := Handles[aDeviceIndex];
 end;
 
 
@@ -237,7 +234,7 @@ begin
     MidiResult := midiInReset(Handle);
     MidiResult := midiInUnprepareHeader(Handle, @TSysExData(fSysExData[aDeviceIndex]).SysExHeader, SizeOf(TMidiHdr));
     MidiResult := midiInClose(Handle);
-    fDeviceNames.Objects[aDeviceIndex] := nil;
+    Handles[aDeviceIndex] := 0;
   end;
 end;
                          
@@ -245,23 +242,24 @@ procedure TMidiDevices.CloseAll;
 var
   i: integer;
 begin
-  for i:= 0 to fDeviceNames.Count - 1 do
+  for i:= 0 to Length(DeviceNames) - 1 do
     Close(i);
 end;
 
 function TMidiDevices.IsOpen(const aDeviceIndex: integer) : boolean;
 begin
-  result := GetHandle(aDeviceIndex) <> 0;
+  result := (aDeviceIndex >= 0) and (GetHandle(aDeviceIndex) <> 0);
 end;
 
 procedure TMidiInput.GenerateList;
 var
   lInCaps: TMidiInCaps;
   lHandle: THandle;
-  i: integer;
+  i, l: integer;
 begin
   CloseAll;
-  fDeviceNames.Clear;
+  SetLength(DeviceNames, 0);
+  SetLength(Handles, 0);
   fSysExData.Clear;
 
  // midiInGetNumDevs does not update!!!
@@ -270,15 +268,18 @@ begin
     MidiResult := midiInGetDevCaps(i, @lInCaps, SizeOf(TMidiInCaps));
     if MidiResult = 0 then
     begin
-      if not IsCreativeSoundBlaster(lInCaps.szPname) and
+      if //not IsCreativeSoundBlaster(lInCaps.szPname) and
          (midiInOpen(@lHandle, i, 0, 0, CALLBACK_NULL) = 0) then
       begin
     {$if defined(CONSOLE)}
-        writeln('midi input ', fDeviceNames.Count, ': ', lInCaps.szPname);
+        writeln('midi input ', length(DeviceNames), ': ', lInCaps.szPname);
     {$endif}
-        midiInClose(lHandle);
-        fDeviceNames.Add(StrPas(lInCaps.szPname));
+        l := length(DeviceNames);
+        SetLength(DeviceNames, l+1);
+        SetLength(Handles, l+1);
+        DeviceNames[l] := lInCaps.szPname;
         fSysExData.Add(TSysExData.Create);
+        midiInClose(lHandle);
       end;
     end;
   end;
@@ -318,7 +319,7 @@ begin
   if Index >= 0 then
   begin
     MidiResult := midiInOpen(@lHandle, Index, cardinal(@midiInCallback), aDeviceIndex, CALLBACK_FUNCTION);
-    fDeviceNames.Objects[ aDeviceIndex ] := TObject(lHandle);
+    Handles[ aDeviceIndex ] := lHandle;
     lSysExData := TSysExData(fSysExData[aDeviceIndex]);
 
     lSysExData.SysExHeader.dwFlags := 0;
@@ -365,20 +366,21 @@ begin
   begin
     Handle := GetHandle(aDeviceIndex);
     MidiResult := midiOutClose(Handle);
-    fDeviceNames.Objects[ aDeviceIndex ] := nil;
+    Handles[ aDeviceIndex ] := 0;
   end;
 end;
 
 procedure TMidiOutput.GenerateList;
 var
-  i: integer;
+  i, l: integer;
   lOutCaps: TMidiOutCaps;
   lHandle: THandle;
   s: string;
 begin
   CloseAll;
-  fDeviceNames.Clear;
-  
+  SetLength(DeviceNames, 0);
+  SetLength(Handles, 0);
+
   // midiOutGetNumDevs does not update!!!
   for i := 0 to integer(midiOutGetNumDevs) - 1 do
   begin
@@ -388,32 +390,27 @@ begin
       if not IsCreativeSoundBlaster(lOutCaps.szPname) and
          (midiOutOpen(@lHandle, i, 0, 0, CALLBACK_NULL) = 0) then
       begin
-        s := lOutCaps.szPname;                       
-        if s = MicrosoftSync then
+        l := length(DeviceNames);
+        SetLength(DeviceNames, l+1);
+        SetLength(Handles, l+1);
+        DeviceNames[l] := lOutCaps.szPname;
+        Handles[l] := 0;
+        s := lOutCaps.szPname;
+        if (s = MicrosoftSync) then
         begin
-          MicrosoftIndex := fDeviceNames.Count;
+          MicrosoftIndex := l;
           TrueMicrosoftIndex := MicrosoftIndex;
 {$if defined(CONSOLE)}
           writeln('Index for ', MicrosoftSync, ' ', MicrosoftIndex);
         end else
-          writeln('midi output ', fDeviceNames.Count, ': ', s);
+          writeln('midi output ', Length(DeviceNames), ': ', s);
 {$else}
         end;
 {$endif}
-       //  MIDICAPS_VOLUME          = $0001;  { supports volume control }
-       //  MIDICAPS_LRVOLUME        = $0002;  { separate left-right volume control }
-       //  MIDICAPS_CACHE           = $0004;
-       //  MIDICAPS_STREAM          = $0008;  { driver supports midiStreamOut directly }
-       //  writeln(IntToHex(lOutCaps.dwSupport));
-        fDeviceNames.Add(lOutCaps.szPname);
         midiOutClose(lHandle);
       end;
     end;
   end;
-  if (fDeviceNames.Count > 1) and
-     (fDeviceNames.IndexOf('Midi Through Port-0') = 0) then
-    MicrosoftIndex := 1
-
 end;
 
 constructor TMidiOutput.Create;
@@ -449,7 +446,7 @@ begin
   if Index >= 0 then
   begin
     MidiResult := midiOutOpen(@lHandle, Index, 0, 0, CALLBACK_NULL);
-    fDeviceNames.Objects[ aDeviceIndex ] := TObject(lHandle);
+    Handles[ aDeviceIndex ] := lHandle;
   end;
 end;
 
@@ -457,13 +454,28 @@ procedure TMidiOutput.Send(const aDeviceIndex: TDeviceIndex; const aStatus, aDat
 var
   lMsg: cardinal;
 begin
-  if not assigned(fDeviceNames.Objects[ aDeviceIndex ]) then
+  if (aDeviceIndex < 0) or (length(Handles) <= aDeviceIndex) or
+     (Handles[ aDeviceIndex ] = 0) then
     exit;
 
   lMsg := aStatus + (aData1 * $100) + (aData2 * $10000);
   MidiResult := midiOutShortMsg(GetHandle(aDeviceIndex), lMsg);
+{$ifdef CONSOLE}
+  writeln(Format('$%2.2x  $%2.2x (%d)  $%2.2x' ,[aStatus, aData1, aData1, aData2]));
+{$endif}
 end;
 
+procedure TMidiOutput.Reset;
+  var
+    i: integer;
+begin
+  for i := 0 to 15 do
+  begin
+    Sleep(5);
+    Send(MicrosoftIndex, $B0 + i, 120, 0);  // all sound off
+  end;
+  Sleep(5);
+end;
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -480,57 +492,6 @@ begin
   inherited;
 end;
 
-procedure DoSoundPitch(Pitch: byte; On_: boolean);
-begin
-  if MicrosoftIndex >= 0 then
-  begin
-    if On_ then
-    begin
-   //   writeln(Pitch, '  $', IntToHex(Pitch));
-      MidiOutput.Send(MicrosoftIndex, $90, Pitch, $4f)
-    end else
-      MidiOutput.Send(MicrosoftIndex, $80, Pitch, $40);
-  end;
-end;
-
-procedure ResetMidi;
-var
-  i: integer;
-begin
-  if MicrosoftIndex >= 0 then
-  begin
-    if MidiOutput.IsOpen(MicrosoftIndex) then
-      for i := 0 to 15 do
-      begin
-        Sleep(5);
-        MidiOutput.Send(MicrosoftIndex, $B0 + i, 120, 0);  // all sound off
-      end;
-    Sleep(5);
-  end;
-end;
-
-procedure OpenMidiMicrosoft;
-begin
-  if MicrosoftIndex >= 0 then
-  begin
-    MidiOutput.Open(MicrosoftIndex);
-    try
-//      ResetMidi;
-      MidiOutput.Send(MicrosoftIndex, $c0, MidiInstr, $00);
-      MidiOutput.Send(MicrosoftIndex, $c1, MidiInstr, $00);
-      MidiOutput.Send(MicrosoftIndex, $c2, MidiInstr, $00);
-      MidiOutput.Send(MicrosoftIndex, $c3, MidiInstr, $00);
-      MidiOutput.Send(MicrosoftIndex, $c4, MidiInstr, $00);
-      MidiOutput.Send(MicrosoftIndex, $c5, MidiInstr, $00);
-      MidiOutput.Send(MicrosoftIndex, $c6, MidiInstr, $00);
-    finally
-    end;
-  {$if defined(CONSOLE)}
-    writeln('Midi Port-', MicrosoftIndex, ' opend');
-  {$endif}
-  end;
-end;
-
 initialization
   gMidiInput := nil;
   gMidiOutput := nil;
@@ -540,3 +501,4 @@ finalization
   FreeAndNil(gMidiOutput);
 
 end.
+

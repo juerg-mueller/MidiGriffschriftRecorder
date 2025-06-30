@@ -1,0 +1,311 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CONFIG>
+  <ProjectSession>
+    <Version Value="12"/>
+    <BuildModes Active="Win64"/>
+    <Units>
+      <Unit>
+        <Filename Value="MidiGriffRecorder.dpr"/>
+        <IsPartOfProject Value="True"/>
+        <TopLine Value="4"/>
+        <CursorPos X="3" Y="16"/>
+        <UsageCount Value="31"/>
+        <Loaded Value="True"/>
+        <DefaultSyntaxHighlighter Value="Delphi"/>
+      </Unit>
+      <Unit>
+        <Filename Value="Midi.pas"/>
+        <IsPartOfProject Value="True"/>
+        <IsVisibleTab Value="True"/>
+        <EditorIndex Value="6"/>
+        <TopLine Value="38"/>
+        <CursorPos X="46" Y="52"/>
+        <UsageCount Value="31"/>
+        <Loaded Value="True"/>
+        <DefaultSyntaxHighlighter Value="Delphi"/>
+      </Unit>
+      <Unit>
+        <Filename Value="teVirtual/teVirtualMIDIdll.pas"/>
+        <IsPartOfProject Value="True"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="33"/>
+        <CursorPos X="21" Y="45"/>
+        <UsageCount Value="31"/>
+        <DefaultSyntaxHighlighter Value="Delphi"/>
+      </Unit>
+      <Unit>
+        <Filename Value="UMidiGriffRecorder.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="MidiGriff"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+        <EditorIndex Value="4"/>
+        <TopLine Value="91"/>
+        <CursorPos X="14" Y="103"/>
+        <UsageCount Value="31"/>
+        <Loaded Value="True"/>
+        <LoadedDesigner Value="True"/>
+        <DefaultSyntaxHighlighter Value="Delphi"/>
+      </Unit>
+      <Unit>
+        <Filename Value="UMidiEvent.pas"/>
+        <IsPartOfProject Value="True"/>
+        <EditorIndex Value="3"/>
+        <TopLine Value="376"/>
+        <CursorPos X="5" Y="393"/>
+        <UsageCount Value="31"/>
+        <Loaded Value="True"/>
+        <DefaultSyntaxHighlighter Value="Delphi"/>
+      </Unit>
+      <Unit>
+        <Filename Value="UMyMemoryStream.pas"/>
+        <IsPartOfProject Value="True"/>
+        <EditorIndex Value="-1"/>
+        <WindowIndex Value="-1"/>
+        <TopLine Value="-1"/>
+        <CursorPos X="-1" Y="-1"/>
+        <UsageCount Value="31"/>
+        <DefaultSyntaxHighlighter Value="Delphi"/>
+      </Unit>
+      <Unit>
+        <Filename Value="UMyMidiStream.pas"/>
+        <IsPartOfProject Value="True"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="18"/>
+        <CursorPos X="5" Y="33"/>
+        <UsageCount Value="31"/>
+        <DefaultSyntaxHighlighter Value="Delphi"/>
+      </Unit>
+      <Unit>
+        <Filename Value="UMidiDataStream.pas"/>
+        <IsPartOfProject Value="True"/>
+        <EditorIndex Value="8"/>
+        <TopLine Value="809"/>
+        <CursorPos X="64" Y="913"/>
+        <UsageCount Value="31"/>
+        <Loaded Value="True"/>
+        <DefaultSyntaxHighlighter Value="Delphi"/>
+      </Unit>
+      <Unit>
+        <Filename Value="UEventArray.pas"/>
+        <IsPartOfProject Value="True"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="282"/>
+        <CursorPos X="51" Y="291"/>
+        <UsageCount Value="31"/>
+        <DefaultSyntaxHighlighter Value="Delphi"/>
+      </Unit>
+      <Unit>
+        <Filename Value="rtmidi.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="RtMidi"/>
+        <EditorIndex Value="2"/>
+        <TopLine Value="119"/>
+        <CursorPos X="12" Y="130"/>
+        <UsageCount Value="29"/>
+        <Loaded Value="True"/>
+        <DefaultSyntaxHighlighter Value="Delphi"/>
+      </Unit>
+      <Unit>
+        <Filename Value="umidi.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="UMidi"/>
+        <EditorIndex Value="1"/>
+        <TopLine Value="10"/>
+        <CursorPos X="24" Y="56"/>
+        <UsageCount Value="29"/>
+        <Loaded Value="True"/>
+        <DefaultSyntaxHighlighter Value="Delphi"/>
+      </Unit>
+      <Unit>
+        <Filename Value="urtmidi.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="Urtmidi"/>
+        <EditorIndex Value="-1"/>
+        <WindowIndex Value="-1"/>
+        <TopLine Value="-1"/>
+        <CursorPos X="-1" Y="-1"/>
+        <UsageCount Value="29"/>
+        <DefaultSyntaxHighlighter Value="Delphi"/>
+      </Unit>
+      <Unit>
+        <Filename Value="umididatain.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="UMidiDataIn"/>
+        <EditorIndex Value="5"/>
+        <TopLine Value="159"/>
+        <CursorPos X="17" Y="177"/>
+        <UsageCount Value="26"/>
+        <Loaded Value="True"/>
+        <DefaultSyntaxHighlighter Value="Delphi"/>
+      </Unit>
+      <Unit>
+        <Filename Value="UMidiSaveStream.pas"/>
+        <EditorIndex Value="7"/>
+        <TopLine Value="79"/>
+        <CursorPos X="47" Y="88"/>
+        <ExtraEditorCount Value="1"/>
+        <ExtraEditor1>
+          <EditorIndex Value="-1"/>
+          <WindowIndex Value="-1"/>
+          <TopLine Value="79"/>
+          <CursorPos X="79" Y="96"/>
+        </ExtraEditor1>
+        <UsageCount Value="29"/>
+        <Loaded Value="True"/>
+        <DefaultSyntaxHighlighter Value="Delphi"/>
+      </Unit>
+      <Unit>
+        <Filename Value="UVirtual.pas"/>
+        <EditorIndex Value="-1"/>
+        <UsageCount Value="20"/>
+        <DefaultSyntaxHighlighter Value="Delphi"/>
+      </Unit>
+      <Unit>
+        <Filename Value="../MidiSequenzer-main/backup/backup/backup/urtmidi.pas"/>
+        <UnitName Value="Urtmidi"/>
+        <EditorIndex Value="-1"/>
+        <CursorPos X="15" Y="10"/>
+        <UsageCount Value="23"/>
+        <DefaultSyntaxHighlighter Value="Delphi"/>
+      </Unit>
+      <Unit>
+        <Filename Value="../MidiRekorder-laz/UMidiDataStream.pas"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="669"/>
+        <CursorPos X="21" Y="669"/>
+        <UsageCount Value="11"/>
+        <DefaultSyntaxHighlighter Value="Delphi"/>
+      </Unit>
+      <Unit>
+        <Filename Value="criticalsection.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="CriticalSection"/>
+        <EditorIndex Value="-1"/>
+        <WindowIndex Value="-1"/>
+        <TopLine Value="-1"/>
+        <CursorPos X="-1" Y="-1"/>
+        <UsageCount Value="20"/>
+        <DefaultSyntaxHighlighter Value="Delphi"/>
+      </Unit>
+    </Units>
+    <JumpHistory HistoryIndex="27">
+      <Position>
+        <Filename Value="UMidiDataStream.pas"/>
+        <Caret Line="903" TopLine="885"/>
+      </Position>
+      <Position>
+        <Filename Value="UMidiDataStream.pas"/>
+        <Caret Line="888" Column="79" TopLine="876"/>
+      </Position>
+      <Position>
+        <Filename Value="UMidiDataStream.pas"/>
+        <Caret Line="851" Column="18" TopLine="829"/>
+      </Position>
+      <Position>
+        <Filename Value="UMidiDataStream.pas"/>
+        <Caret Line="876" Column="97" TopLine="838"/>
+      </Position>
+      <Position>
+        <Filename Value="UMidiDataStream.pas"/>
+        <Caret Line="895" Column="41" TopLine="876"/>
+      </Position>
+      <Position>
+        <Filename Value="UMidiDataStream.pas"/>
+        <Caret Line="900" Column="22" TopLine="882"/>
+      </Position>
+      <Position>
+        <Filename Value="UMidiDataStream.pas"/>
+        <Caret Line="901" Column="18" TopLine="886"/>
+      </Position>
+      <Position>
+        <Filename Value="UMidiDataStream.pas"/>
+        <Caret Line="881" Column="49" TopLine="871"/>
+      </Position>
+      <Position>
+        <Filename Value="UMidiDataStream.pas"/>
+        <Caret Line="906" Column="15" TopLine="885"/>
+      </Position>
+      <Position>
+        <Filename Value="UMidiDataStream.pas"/>
+        <Caret Line="900" Column="87" TopLine="885"/>
+      </Position>
+      <Position>
+        <Filename Value="UMidiDataStream.pas"/>
+        <Caret Line="917" Column="34" TopLine="902"/>
+      </Position>
+      <Position>
+        <Filename Value="UMidiDataStream.pas"/>
+        <Caret Line="837" Column="11" TopLine="823"/>
+      </Position>
+      <Position>
+        <Filename Value="UMidiDataStream.pas"/>
+        <Caret Line="905" Column="74" TopLine="890"/>
+      </Position>
+      <Position>
+        <Filename Value="umididatain.pas"/>
+        <Caret Line="212" Column="13" TopLine="191"/>
+      </Position>
+      <Position>
+        <Filename Value="umididatain.pas"/>
+        <Caret Line="220" Column="66" TopLine="191"/>
+      </Position>
+      <Position>
+        <Filename Value="umididatain.pas"/>
+        <Caret Line="215" TopLine="191"/>
+      </Position>
+      <Position>
+        <Filename Value="umididatain.pas"/>
+        <Caret Line="216" TopLine="191"/>
+      </Position>
+      <Position>
+        <Filename Value="umididatain.pas"/>
+        <Caret Line="217" TopLine="191"/>
+      </Position>
+      <Position>
+        <Filename Value="umididatain.pas"/>
+        <Caret Line="220" TopLine="193"/>
+      </Position>
+      <Position>
+        <Filename Value="umididatain.pas"/>
+        <Caret Line="221" TopLine="194"/>
+      </Position>
+      <Position>
+        <Filename Value="umididatain.pas"/>
+        <Caret Line="222" TopLine="195"/>
+      </Position>
+      <Position>
+        <Filename Value="umididatain.pas"/>
+        <Caret Line="229" Column="23" TopLine="218"/>
+      </Position>
+      <Position>
+        <Filename Value="umididatain.pas"/>
+        <Caret Line="206" Column="44" TopLine="190"/>
+      </Position>
+      <Position>
+        <Filename Value="umididatain.pas"/>
+        <Caret Line="205" Column="40" TopLine="194"/>
+      </Position>
+      <Position>
+        <Filename Value="UMidiGriffRecorder.pas"/>
+        <Caret Line="95" Column="35" TopLine="91"/>
+      </Position>
+      <Position>
+        <Filename Value="umididatain.pas"/>
+        <Caret Line="311" Column="57" TopLine="288"/>
+      </Position>
+      <Position>
+        <Filename Value="umididatain.pas"/>
+        <Caret Line="312" Column="93" TopLine="289"/>
+      </Position>
+      <Position>
+        <Filename Value="UMidiGriffRecorder.pas"/>
+        <Caret Line="103" Column="76" TopLine="91"/>
+      </Position>
+    </JumpHistory>
+    <RunParams>
+      <FormatVersion Value="2"/>
+      <Modes ActiveMode=""/>
+    </RunParams>
+  </ProjectSession>
+</CONFIG>

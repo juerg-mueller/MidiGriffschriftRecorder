@@ -1,28 +1,44 @@
-﻿program MidiGriffRecorder;
+program MidiGriffRecorder;
+
+//
+// funktioniert für Win32
+//
+// Midi.pas verwendet die Winmm.dll. Sie ist eine 32-Bit Library, für 64-Bit gibt es keinen Ersatz.
+//
+
+{$IFDEF FPC}
+  {$MODE Delphi}
+{$ENDIF}
 
 uses
-  Vcl.Forms,
+{$ifdef unix}
+  cthreads,
+  pthreads,
+{$endif}
+  Interfaces,
+  Forms,
+  LCLIntf, LCLType, LMessages,
+  UMidi,
+{$if defined(mswindows) and not defined(Win64)}
   Midi in 'Midi.pas',
-  teVirtualMIDIdll in 'teVirtual\teVirtualMIDIdll.pas',
+{$else}
+  rtmidi,
+  urtmidi,
+{$endif}
+//  teVirtualMIDIdll in 'teVirtual\teVirtualMIDIdll.pas',
   UMidiGriffRecorder in 'UMidiGriffRecorder.pas' {MidiGriff},
-  UVirtual in 'UVirtual.pas',
-  UMidiSaveStream in 'UMidiSaveStream.pas',
   UMidiEvent in 'UMidiEvent.pas',
   UMyMemoryStream in 'UMyMemoryStream.pas',
   UMyMidiStream in 'UMyMidiStream.pas',
   UMidiDataStream in 'UMidiDataStream.pas',
-  UEventArray in 'UEventArray.pas';
+  UEventArray in 'UEventArray.pas', UMidiDataIn, CriticalSection;
 
-
-{$ifdef DEBUG}
-  {$APPTYPE CONSOLE}
-{$endif}
 
 {$R *.res}
 
 begin
   Application.Initialize;
-  Application.MainFormOnTaskbar := True;
+//  Application.MainFormOnTaskbar := True;
   Application.CreateForm(TMidiGriff, MidiGriff);
   Application.CreateForm(TMidiGriff, MidiGriff);
   Application.Run;

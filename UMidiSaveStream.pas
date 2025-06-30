@@ -227,17 +227,17 @@ begin
 
   i := newCount;
   while (i < MidiRec.eventCount-2) and
-        MidiRec.MidiEvents[i].IsSustain and MidiRec.MidiEvents[i+1].IsSustain do
+        MidiRec.MidiEvents[i].IsPushPull and MidiRec.MidiEvents[i+1].IsPushPull do
     inc(i);
 
-  while (i < MidiRec.eventCount) and MidiRec.MidiEvents[MidiRec.eventCount-1].IsSustain do
+  while (i < MidiRec.eventCount) and MidiRec.MidiEvents[MidiRec.eventCount-1].IsPushPull do
     dec(MidiRec.eventCount);
 
   inpush := true;
   MidiRec.MidiEvents[i].var_len := 0;
   while i < MidiRec.eventCount do
   begin
-    isEvent := MidiRec.MidiEvents[i].IsSustain;
+    isEvent := MidiRec.MidiEvents[i].IsPushPull;
     if not isEvent or (inpush <> (MidiRec.MidiEvents[i].d2 <> 0)) then
     begin
       if isEvent then
